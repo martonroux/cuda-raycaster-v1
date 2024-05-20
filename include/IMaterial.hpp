@@ -20,13 +20,13 @@ namespace rcr {
          * This is the main IMaterial function. It performs the most important calculation, which is the color of a
          * shape at a certain coordinate. It can be used recursively for reflections / refractions.
          */
-        __device__ [[nodiscard]] short3 calcColor(
+        __device__ virtual ushort3 calcColor(
             int recursion,
             vec3<float> collision,
             vec3<float> normal,
             ray camera,
             IShape* shape,
-            std::vector<IShape*> scene);
+            std::vector<IShape*> scene) = 0;
     };
 }
 

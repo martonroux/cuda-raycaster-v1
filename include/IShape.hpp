@@ -18,17 +18,13 @@ namespace rcr {
 
         /**
          * The hit() function checks whether a ray hits said shape, and if it does, returns the closest position.
-         * Shapes can have multiple properties at a time. For this reason, we give multiple blocks to each shape
-         * to calculate more efficiently. Each block should be assigned to one of the properties of the shape. If
-         * there aren't enough blocks, the hit() method should account for it.
          */
-        __device__ [[nodiscard]] hitPos hit(ray ray, int nbBlocks) const;
+        __device__ virtual hitPos hit(ray ray) const = 0;
 
         /**
-         * The amount() function returns the amount of different properties that the shape has. This will be used by
-         * the calling function to determine how many blocks will be assigned for the hit() function of the shape.
+         * The getUvMapping() function returns the 2D UV coords depending on 3D coordinates, for the actual shape.
          */
-        __device__ [[nodiscard]] unsigned int amount() const;
+        __device__ virtual float2 getUvMapping(vec3<float> pos) const = 0;
     };
 
 }

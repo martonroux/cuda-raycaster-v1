@@ -27,7 +27,17 @@ namespace rcr {
             __syncthreads();
             return std::sqrt(sum[0] + sum[1] + sum[2]);
         }
-        __device__ vec3 dot(const vec3* other, unsigned int threadIdx) {
+        __device__ void normalize(unsigned int threadIdx) {
+            float len = length(threadIdx);
+
+            if (threadIdx == 0)
+                x /= len;
+            if (threadIdx == 1)
+                y /= len;
+            if (threadIdx == 2)
+                z /= len;
+        }
+        __device__ float dot(const vec3* other, unsigned int threadIdx) {
             __shared__ vec3 ret;
 
             if (threadIdx == 0)
@@ -37,7 +47,7 @@ namespace rcr {
             if (threadIdx == 2)
                 ret.z = z * other->z;
             __syncthreads();
-            return ret;
+            return ret.x + ret.y + ret.z;
         }
         __device__ vec3 cross(const vec3* other, unsigned int threadIdx) {
             __shared__ vec3 ret;
