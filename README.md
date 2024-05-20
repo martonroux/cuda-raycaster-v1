@@ -54,3 +54,4 @@ Just in case, here is my configuration:
 GTX 1080Ti  
 Driver version: 535.171.04  
 CUDA version: 12.4  
+CMake version: 3.29.3
