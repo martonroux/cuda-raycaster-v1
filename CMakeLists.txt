@@ -14,7 +14,6 @@ add_executable(raycaster src/main.cu
         include/CudaError.hpp
         include/math/Ray.hpp
         include/math/Vec3.hpp
-        include/shapes/Triangle.cuh
         include/IMaterial.hpp
         src/render/render.cu
         src/shapes/Triangle.cu
