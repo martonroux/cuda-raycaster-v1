@@ -1,13 +1,13 @@
 /*
 ** RAYCASTING LIBRARY
-** Ray.hpp
+** Ray.cuh
 ** Created by marton on 20/05/24.
 */
 
 #ifndef RAY_HPP
 #define RAY_HPP
 
-#include "Vec3.hpp"
+#include "Vec3.cuh"
 
 namespace rcr {
 

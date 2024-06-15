@@ -11,6 +11,7 @@
 
 #include <exception>
 #include <cstring> // For std::memcpy
+#include <string>
 
 namespace rcr {
 

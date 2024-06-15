@@ -19,6 +19,16 @@ namespace rcr {
         return res;
     }
 
+    __device__ void Triangle::move(vec3<float> p1, vec3<float> p2, vec3<float> p3) {
+        p1_ = p1;
+        p2_ = p2;
+        p3_ = p3;
+    }
+
+    __device__ void Triangle::setID(unsigned int id) {
+        id_ = id;
+    }
+
     __device__ hitPos Triangle::hit(ray ray) {
         vec3<float> e1, e2, h, s, q;
         float a, f, u, v, t;

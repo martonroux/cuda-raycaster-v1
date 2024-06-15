@@ -1,6 +1,6 @@
 /*
 ** RAYCASTING LIBRARY
-** Vec3.hpp
+** Vec3.cuh
 ** Created by marton on 20/05/24.
 */
 
