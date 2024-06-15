@@ -14,13 +14,11 @@ add_executable(raycaster src/main.cu
         include/CudaError.hpp
         include/math/Ray.hpp
         include/math/Vec3.hpp
-        include/IShape.hpp
-        include/shapes/Triangle.hpp
+        include/shapes/Triangle.cuh
         include/IMaterial.hpp
-        src/shapes/Triangle.cu
-        src/materials/PhongMaterial.cu
-        include/materials/PhongMaterial.hpp
         src/render/render.cu
+        src/shapes/Triangle.cu
+        include/shapes/Triangle.hpp
 )
 
 set_target_properties(raycaster PROPERTIES CUDA_SEPARABLE_COMPILATION ON)

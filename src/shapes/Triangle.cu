@@ -1,92 +1,63 @@
 /*
 ** RAYCASTING LIBRARY
 ** Triangle.cu
-** Created by marton on 20/05/24.
+** Created by marton on 15/06/24.
 */
 
 #include "shapes/Triangle.hpp"
 
-#include <cstdio>
-
 namespace rcr {
-    __host__ Triangle::Triangle(vec3<float> p1, vec3<float> p2, vec3<float> p3) {
-        // Allocate memory in CUDA
-        cudaMalloc((void**)&d_p1_, sizeof(rcr::vec3<float>));
-        cudaMalloc((void**)&d_p2_, sizeof(rcr::vec3<float>));
-        cudaMalloc((void**)&d_p3_, sizeof(rcr::vec3<float>));
-//        cudaMalloc((void**)&d_mat_, sizeof(IMaterial));
 
-        // Copy data to CUDA memory
-        cudaMemcpy(d_p1_, &p1, sizeof(rcr::vec3<float>), cudaMemcpyHostToDevice);
-        cudaMemcpy(d_p2_, &p2, sizeof(rcr::vec3<float>), cudaMemcpyHostToDevice);
-        cudaMemcpy(d_p3_, &p3, sizeof(rcr::vec3<float>), cudaMemcpyHostToDevice);
-//        cudaMemcpy(d_mat_, mat, sizeof(IMaterial), cudaMemcpyHostToDevice);
+    __device__ rcr::vec3<float> getHitPos(rcr::ray ray, float t) {
+        vec3<float> temp_res, res;
+
+        temp_res={};
+        res={};
+
+        ray.direction.multSingle(t, &temp_res);
+        ray.origin.sumSingle(&temp_res, &res);
+        return res;
     }
 
-    __host__ Triangle::~Triangle() {
-        cudaFree(d_p1_);
-        cudaFree(d_p2_);
-        cudaFree(d_p3_);
-//        cudaFree(d_mat_);
-    }
+    __device__ hitPos Triangle::hit(ray ray) {
+        vec3<float> e1, e2, h, s, q;
+        float a, f, u, v, t;
 
-    __device__ hitPos Triangle::hit(rcr::ray ray) const {
-        __shared__ rcr::vec3<float> v0v1;
-        __shared__ rcr::vec3<float> v1v2;
+        e1={}, e2={}, h={}, s={}, q={};
+        f=0, f=0, u=0, v=0, t=0;
 
-        ray.origin = {0, 0, -1};
-        ray.direction = {0, 0, 1};
-        __syncthreads();
-        unsigned int tid = threadIdx.x;
-        v0v1 = d_p2_->diff(d_p1_, tid);
-        v1v2 = d_p3_->diff(d_p2_, tid);
+        p2_.diffSingle(&p1_, &e1);
+        p3_.diffSingle(&p1_, &e2);
 
-        vec3<float> normal = v0v1.cross(&v1v2, tid);
-        normal.normalize(tid);
+        ray.direction.crossSingle(&e2, &h);
 
-        float nDotRayDirection = normal.dot(&ray.direction, tid);
-        if (std::abs(nDotRayDirection) < 0.0000001)
+        a = e1.dotSingle(&h);  // This function is blocking
+
+        if (a > -0.00001 && a < 0.00001)
             return {false, {}};
 
-        float D = -normal.dot(d_p1_, tid);
-        float t = -(normal.dot(&ray.origin, tid) + D) / normal.dot(&ray.direction, tid);
+        f = 1 / a;
 
-        if (t < 0)
-            return {false, {}};
-        vec3<float> vec1 = ray.direction.mult(t, tid); // dirMult
-        vec3<float> P = ray.origin.sum(&vec1, tid);
-        vec1 = P.diff(d_p1_, tid); // vp0
-        vec3<float> C = v0v1.cross(&vec1, tid);
+        ray.origin.diffSingle(&p1_, &s);
 
-        if (normal.dot(&C, tid) < 0)
-            return {false, {}};
-        vec1 = P.diff(d_p2_, tid); // vp1
-        C = v1v2.cross(&vec1, tid);
+        u = f * s.dotSingle(&h);  // This function is blocking
 
-        if (normal.dot(&C, tid) < 0)
+        if (u < 0.0 || u > 1.0)
             return {false, {}};
 
-        vec3<float> v2v0 = d_p1_->diff(d_p3_, tid);
-        vec1 = P.diff(d_p3_, tid); // vp2
-        C = v2v0.cross(&vec1, tid);
+        s.crossSingle(&e1, &q);
 
-        if (normal.dot(&C, tid) < 0)
+        v = f * ray.direction.dotSingle(&q);  // This function is blocking
+
+        if (v < 0.0 || u + v > 1.0)
             return {false, {}};
-        return {true, P};
+
+        t = f * e2.dotSingle(&q);
+
+        if (t > 0.00001)
+            return {true, {getHitPos(ray, t)}};
+
+        return {false, {}};
     }
 
-    __device__ float2 Triangle::getUvMapping(vec3<float> pos) const {
-        return {0, 0};
-    }
-
-    __host__ void Triangle::changePosition(vec3<float> p1, vec3<float> p2, vec3<float> p3) {
-        cudaMemcpy(d_p1_, &p1, sizeof(rcr::vec3<float>), cudaMemcpyHostToDevice);
-        cudaMemcpy(d_p2_, &p2, sizeof(rcr::vec3<float>), cudaMemcpyHostToDevice);
-        cudaMemcpy(d_p3_, &p3, sizeof(rcr::vec3<float>), cudaMemcpyHostToDevice);
-    }
-
-    __host__ void Triangle::changeMaterial(IMaterial *mat) {
-//        cudaMemcpy(d_mat_, mat, sizeof(IMaterial), cudaMemcpyHostToDevice);
-    }
-
-}
+} // rcr

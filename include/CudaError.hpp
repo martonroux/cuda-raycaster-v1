@@ -31,15 +31,20 @@ namespace rcr {
     class CudaError {
         char _what[CUDA_ERROR_MSG_CAP_SIZE] = {};
         char _where[CUDA_ERROR_MSG_CAP_SIZE] = {};
+        bool _hasError = false;
 
     public:
         CudaError() = default;
 
+        __device__ __host__ bool hasError() const noexcept { return _hasError; }
+
         __device__ void setException(const char* what, const char* where) {
+            if (_what[0] != '\0' || _where[0] != '\0')
+                return;
             for (int i = 0; i < CUDA_ERROR_MSG_CAP_SIZE; ++i) {
                 _what[i] = what[i];
                 _where[i] = where[i];
-                if (what[i] == '\0' && where[i] == '\0') break; // stop at null terminator
+                if (what[i] == '\0' && where[i] == '\0') break;
             }
         }
 
