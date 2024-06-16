@@ -29,7 +29,7 @@ namespace rcr {
         id_ = id;
     }
 
-    __device__ hitPos Triangle::hit(ray ray) {
+    __device__ hitPos Triangle::hit(ray ray) const {
         vec3<float> e1, e2, h, s, q;
         float a, f, u, v, t;
 

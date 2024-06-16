@@ -28,10 +28,10 @@ add_executable(raycaster
         src/render/render.cu
         src/shapes/Triangle.cu
         include/shapes/Triangle.hpp
-        src/render/Renderer.cu
-        include/render/Renderer.hpp
-        include/math/Matrix.cuh
+        include/render/Renderer.cuh
         include/math/RGB.cuh
+        include/math/Matrix.cuh
+        include/Error.hpp
 )
 
 set_target_properties(raycaster PROPERTIES CUDA_SEPARABLE_COMPILATION ON)

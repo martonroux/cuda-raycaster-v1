@@ -11,10 +11,10 @@
 
 namespace rcr {
 
-    struct RGB {
-        u_int8_t r;
-        u_int8_t g;
-        u_int8_t b;
+    struct rgb {
+        unsigned char r;
+        unsigned char g;
+        unsigned char b;
     };
 
 }

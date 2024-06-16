@@ -16,7 +16,7 @@ namespace rcr {
         T z;
 
         // THIS FUNCTION IS BLOCKING
-        __device__ float length(unsigned int threadIdx, unsigned int startThreadIdx) {
+        __device__ float length(unsigned int threadIdx, unsigned int startThreadIdx) const {
             __shared__ vec3<float> len;
 
             len = {};
@@ -32,7 +32,7 @@ namespace rcr {
         }
 
         // THIS FUNCTION IS BLOCKING
-        __device__ void normalize(unsigned int threadIdx, unsigned int startThreadIdx) {
+        __device__ void normalize(unsigned int threadIdx, unsigned int startThreadIdx) const {
             __shared__ float len;
 
             len = length(threadIdx, startThreadIdx);
@@ -46,7 +46,7 @@ namespace rcr {
         }
 
         // THIS FUNCTION IS BLOCKING
-        __device__ float dot(const vec3* other, unsigned int threadIdx, unsigned int startThreadIdx) {
+        __device__ float dot(const vec3* other, unsigned int threadIdx, unsigned int startThreadIdx) const {
             __shared__ float res;
 
             res = 0;
@@ -64,7 +64,7 @@ namespace rcr {
             return res;
         }
 
-        __device__ float dotSingle(const vec3* other) {
+        __device__ float dotSingle(const vec3* other) const {
             float res = 0;
 
             res += x * other->x;
@@ -73,7 +73,7 @@ namespace rcr {
 
             return res;
         }
-        __device__ void cross(const vec3* other, vec3* res, unsigned int threadIdx, unsigned int startThreadIdx) {
+        __device__ void cross(const vec3* other, vec3* res, unsigned int threadIdx, unsigned int startThreadIdx) const {
             if (threadIdx == startThreadIdx)
                 res->x = y * other->z - z * other->y;
             else if (threadIdx == startThreadIdx + 1)
@@ -81,12 +81,12 @@ namespace rcr {
             else if (threadIdx == startThreadIdx + 2)
                 res->z = x * other->y - y * other->x;
         }
-        __device__ void crossSingle(const vec3* other, vec3* res) {
+        __device__ void crossSingle(const vec3* other, vec3* res) const {
             res->x = y * other->z - z * other->y;
             res->y = z * other->x - x * other->z;
             res->z = x * other->y - y * other->x;
         }
-        __device__ void sum(const vec3* other, vec3* res, unsigned int threadIdx, unsigned int startThreadIdx) {
+        __device__ void sum(const vec3* other, vec3* res, unsigned int threadIdx, unsigned int startThreadIdx) const {
             if (threadIdx == startThreadIdx)
                 res->x = x + other->x;
             else if (threadIdx == startThreadIdx + 1)
@@ -94,12 +94,12 @@ namespace rcr {
             else if (threadIdx == startThreadIdx + 2)
                 res->z = z + other->z;
         }
-        __device__ void sumSingle(const vec3* other, vec3* res) {
+        __device__ void sumSingle(const vec3* other, vec3* res) const {
             res->x = x + other->x;
             res->y = y + other->y;
             res->z = z + other->z;
         }
-        __device__ void diff(const vec3* other, vec3* res, unsigned int threadIdx, unsigned int startThreadIdx) {
+        __device__ void diff(const vec3* other, vec3* res, unsigned int threadIdx, unsigned int startThreadIdx) const {
             if (threadIdx == startThreadIdx)
                 res->x = x - other->x;
             else if (threadIdx == startThreadIdx + 1)
@@ -107,12 +107,12 @@ namespace rcr {
             else if (threadIdx == startThreadIdx + 2)
                 res->z = z - other->z;
         }
-        __device__ void diffSingle(const vec3* other, vec3* res) {
+        __device__ void diffSingle(const vec3* other, vec3* res) const {
             res->x = x - other->x;
             res->y = y - other->y;
             res->z = z - other->z;
         }
-        __device__ void mult(T value, vec3* res, unsigned int threadIdx, unsigned int startThreadIdx) {
+        __device__ void mult(T value, vec3* res, unsigned int threadIdx, unsigned int startThreadIdx) const {
             if (threadIdx == startThreadIdx)
                 res->x = x * value;
             else if (threadIdx == startThreadIdx + 1)
@@ -120,12 +120,12 @@ namespace rcr {
             else if (threadIdx == startThreadIdx + 2)
                 res->z = z * value;
         }
-        __device__ void multSingle(T value, vec3* res) {
+        __device__ void multSingle(T value, vec3* res) const {
             res->x = x * value;
             res->y = y * value;
             res->z = z * value;
         }
-        __device__ void div(T value, vec3* res, unsigned int threadIdx, unsigned int startThreadIdx) {
+        __device__ void div(T value, vec3* res, unsigned int threadIdx, unsigned int startThreadIdx) const {
             if (threadIdx == startThreadIdx)
                 res->x = x / value;
             else if (threadIdx == startThreadIdx + 1)
