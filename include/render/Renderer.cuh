@@ -46,7 +46,7 @@ namespace rcr {
 
     template<size_t H, size_t W>
     __device__ void render(
-            matrix<H, W, hitPos> *image,
+            matrixh<H, W, hitPos> *image,
             Triangle *triangles,
             unsigned int nbTriangles,
             rendererData data,
@@ -54,21 +54,19 @@ namespace rcr {
         int idx = blockIdx.x * blockDim.x + threadIdx.x;
         int nbElems = static_cast<int>(nbTriangles);
         int triangleId = idx % nbElems;
-        matrix<1, 2, int> pixel{};
+        int pixels[2] = {};
 
-        pixel(0, 0) = idx % W;
-        pixel(0, 1) = idx / W;
+        pixels[0] = idx % W;
+        pixels[1] = idx / W;
 
-        float u = pixel(0, 0) / static_cast<float>(W - 1);
-        float v = pixel(0, 1) / static_cast<float>(H - 1);
+        float u = pixels[0] / static_cast<float>(W - 1);
+        float v = pixels[1] / static_cast<float>(H - 1);
 
         ray ray = getPixelRay(u, v, data, error);
         hitPos pos = triangles[triangleId].hit(ray);
 
-        // printf("Thread %d at pixel (%d,%d), ray: (%f,%f,%f), hit: %d\n", idx, idx % static_cast<int>(W), idx / static_cast<int>(W), ray.direction.x, ray.direction.y, ray.direction.z, pos.hit);
-
-        (*image)(pixel(0, 0), pixel(0, 1)).hit = pos.hit;
-        (*image)(pixel(0, 0), pixel(0, 1)).pos = pos.pos;
+        (*image)(pixels[0], pixels[1]).hit = pos.hit;
+        (*image)(pixels[0], pixels[1]).pos = pos.pos;
     }
 
 } // rcr

@@ -4,19 +4,24 @@
 ** Created by marton on 15/06/24.
 */
 
-#ifndef MATRIX2_CUH
-#define MATRIX2_CUH
+#ifndef MATRIX_CUH
+#define MATRIX_CUH
+
+#include <iostream>
+#include "Error.hpp"
 
 namespace rcr {
 
+    /* -------------------------- 2D MATRIX -------------------------- */
     template<size_t ROW, size_t COL, typename T>
-    class matrix {
-        T h_values_[ROW * COL] = {};
-        T d_values_[ROW * COL] = {};
+    class matrixh {
+        T *h_values_ = nullptr;
+        T *d_values_ = nullptr;
 
     public:
-        __device__ __host__ matrix() = default;
-        __device__ __host__ matrix(T *values);
+        __host__ matrixh();
+        __host__ matrixh(T *values);
+        __host__ ~matrixh();
 
         __host__ void moveToDevice();
         __host__ void moveToHost();
@@ -26,30 +31,62 @@ namespace rcr {
     };
 
     template<size_t ROW, size_t COL, typename T>
-    matrix<ROW, COL, T>::matrix(T *values) {
-#ifdef __CUDACC__
-        for (int i = 0; i < ROW * COL; i++)
-            d_values_[i] = values[i];
-#else
+    matrixh<ROW, COL, T>::matrixh() {
+        h_values_ = (T*)malloc(sizeof(T) * ROW * COL);
+
+        if (h_values_ == nullptr)
+            throw MatrixError("Host memory allocation failed", "Matrix.cuh | matrixh::matrixh");
+    }
+
+    template<size_t ROW, size_t COL, typename T>
+    matrixh<ROW, COL, T>::matrixh(T *values) {
+        h_values_ = (T*)malloc(sizeof(T) * ROW * COL);
+
+        if (h_values_ == nullptr)
+            throw MatrixError("Host memory allocation failed", "Matrix.cuh | matrixh::matrixh");
+
         for (int i = 0; i < ROW * COL; i++)
             h_values_[i] = values[i];
-#endif
     }
 
     template<size_t ROW, size_t COL, typename T>
-    void matrix<ROW, COL, T>::moveToDevice() {
-        cudaMalloc((void**)&d_values_, sizeof(T) * ROW * COL);
-        cudaMemcpy(d_values_, h_values_, sizeof(T) * ROW * COL, cudaMemcpyHostToDevice);
+    matrixh<ROW, COL, T>::~matrixh() {
+        if (d_values_) cudaFree(d_values_);
     }
 
     template<size_t ROW, size_t COL, typename T>
-    void matrix<ROW, COL, T>::moveToHost() {
-        cudaMemcpy(h_values_, d_values_, sizeof(T) * ROW * COL, cudaMemcpyDeviceToHost);
+    void matrixh<ROW, COL, T>::moveToDevice() {
+        if (d_values_ != nullptr) {
+            cudaFree(d_values_);
+        }
+        cudaError_t err = cudaMalloc((void**)&d_values_, sizeof(T) * ROW * COL);
+
+        if (err != cudaSuccess)
+            throw MatrixError("CUDA memory allocation failed: " + std::string(cudaGetErrorString(err)), "Matrix.cuh | matrixh::moveToDevice");
+
+        err = cudaMemcpy(d_values_, h_values_, sizeof(T) * ROW * COL, cudaMemcpyHostToDevice);
+
+        if (err != cudaSuccess)
+            throw MatrixError("CUDA memory copy to device failed: " + std::string(cudaGetErrorString(err)), "Matrix.cuh | matrixh::moveToDevice");
     }
 
     template<size_t ROW, size_t COL, typename T>
-    T & matrix<ROW, COL, T>::operator()(size_t row, size_t col) {
-#ifdef __CUDACC__
+    void matrixh<ROW, COL, T>::moveToHost() {
+        if (d_values_ == nullptr || h_values_ == nullptr)
+            throw MatrixError("CUDA memory copy to host failed: null pointer", "Matrix.cuh | matrixh::moveToHost");
+
+        free(h_values_);
+        h_values_ = (T*)malloc(sizeof(T) * ROW * COL);
+
+        cudaError_t err = cudaMemcpy(h_values_, d_values_, sizeof(T) * ROW * COL, cudaMemcpyDeviceToHost);
+
+        if (err != cudaSuccess)
+            throw MatrixError("CUDA memory copy to host failed: " + std::string(cudaGetErrorString(err)), "Matrix.cuh | matrixh::moveToHost");
+    }
+
+    template<size_t ROW, size_t COL, typename T>
+    T & matrixh<ROW, COL, T>::operator()(size_t row, size_t col) {
+#ifdef __CUDA_ARCH__
         return d_values_[col + row * COL];
 #else
         return h_values_[col + row * COL];
@@ -57,8 +94,8 @@ namespace rcr {
     }
 
     template<size_t ROW, size_t COL, typename T>
-    const T& matrix<ROW, COL, T>::operator()(size_t row, size_t col) const {
-#ifdef __CUDACC__
+    const T& matrixh<ROW, COL, T>::operator()(size_t row, size_t col) const {
+#ifdef __CUDA_ARCH__
         return d_values_[col + row * COL];
 #else
         return h_values_[col + row * COL];
@@ -66,4 +103,4 @@ namespace rcr {
     }
 }
 
-#endif //MATRIX2_CUH
+#endif //MATRIX_CUH

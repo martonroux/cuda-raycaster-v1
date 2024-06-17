@@ -12,7 +12,7 @@
 // Max grid size (x, y, z): (2147483647, 65535, 65535)
 
 template<size_t H, size_t W>
-__global__ void kernelRender(rcr::matrix<H, W, rcr::hitPos> *image, rcr::Triangle *triangles, unsigned int nbTriangles, rcr::CudaError *error) {
+__global__ void kernelRender(rcr::matrixh<H, W, rcr::hitPos> *image, rcr::Triangle *triangles, unsigned int nbTriangles, rcr::CudaError *error) {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
     if (idx >= nbTriangles * H * W)
@@ -50,7 +50,7 @@ rcr::Triangle *createTriangle() {
 }
 
 template<size_t H, size_t W>
-void tempCreateImage(rcr::matrix<H, W, rcr::hitPos> image) {
+void tempCreateImage(rcr::matrixh<H, W, rcr::hitPos> image) {
     cv::Mat temp(W, H, CV_8UC3, cv::Scalar(0, 0, 0));
 
     for (int i = 0; i < W; i++) {
@@ -58,35 +58,94 @@ void tempCreateImage(rcr::matrix<H, W, rcr::hitPos> image) {
             temp.at<cv::Vec3b>(i, j)[0] = image(j, i).hit ? 255 : 0;
         }
     }
-    cv::imshow("Modified Image", temp);
+    cv::imshow("Raycaster", temp);
     cv::waitKey(0);
+}
+
+// __global__ void kernel(rcr::matrixh<2, 2, rcr::hitPos> *matrix) {
+//     int idx = blockIdx.x * blockDim.x + threadIdx.x;
+//     if (idx < 4) {
+//         int row = idx / 2;
+//         int col = idx % 2;
+//         rcr::hitPos pos = (*matrix)(row, col);
+//         (*matrix)(row, col).hit = false;
+//         printf("hit: %d, x: %f, y: %f, z: %f\n", pos.hit, pos.pos.x, pos.pos.y, pos.pos.z);
+//     }
+// }
+//
+// int main() {
+//     // Initialize the matrix with values
+//     rcr::hitPos values[4] = {
+//         {true, 1.0f, 2.0f, 3.0f}, {false, 4.0f, 5.0f, 6.0f},
+//         {true, 7.0f, 8.0f, 9.0f}, {false, 10.0f, 11.0f, 12.0f}
+//     };
+//
+//     rcr::matrixh<2, 2, rcr::hitPos> matrix(values);
+//     rcr::matrixh<2, 2, rcr::hitPos> *d_matrix;
+//
+//     // Access elements on host
+//     for (size_t row = 0; row < 2; ++row) {
+//         for (size_t col = 0; col < 2; ++col) {
+//             rcr::hitPos pos = matrix(row, col);
+//             std::cout << "Host access - hit: " << pos.hit << ", x: " << pos.pos.x << ", y: " << pos.pos.y << ", z: " << pos.pos.z << std::endl;
+//         }
+//     }
+//
+//     // Move data to device
+//     matrix.moveToDevice();
+//
+//     cudaMalloc((void**)&d_matrix, sizeof(rcr::matrixh<2, 2, rcr::hitPos>));
+//     cudaMemcpy(d_matrix, &matrix, sizeof(rcr::matrixh<2, 2, rcr::hitPos>), cudaMemcpyHostToDevice);
+//
+//     // Launch kernel
+//     kernel<<<1, 4>>>(d_matrix);
+//     cudaDeviceSynchronize();
+//
+//     cudaMemcpy(&matrix, d_matrix, sizeof(rcr::matrixh<2, 2, rcr::hitPos>), cudaMemcpyDeviceToHost);
+//     // Move data back to host
+//     // matrix.moveToHost();
+//     //
+//     // Verify data moved back correctly (if you modified data in the kernel, you should verify it here)
+//     matrix.moveToHost();
+//     for (size_t row = 0; row < 2; ++row) {
+//         for (size_t col = 0; col < 2; ++col) {
+//             rcr::hitPos pos = matrix(row, col);
+//             std::cout << "Host verification - hit: " << pos.hit << ", x: " << pos.pos.x << ", y: " << pos.pos.y << ", z: " << pos.pos.z << std::endl;
+//         }
+//     }
+//
+//     return 0;
+// }
+
+std::pair<int, int> getNumThreadsBlocks(size_t width, size_t height, unsigned int numThreadsPerBlock) {
+    int numBlocks = (1 * width * height + numThreadsPerBlock - 1) / numThreadsPerBlock;
+
+    return {numBlocks, numThreadsPerBlock};
 }
 
 int main() {
     rcr::CudaError h_error{};
     rcr::CudaError *d_error;
-
-    const size_t width = 200;
-    const size_t height = 200;
-
-    rcr::hitPos hits[width * height] = {};
-
-    rcr::matrix<height, width, rcr::hitPos> h_image{hits};
-    rcr::matrix<height, width, rcr::hitPos> *d_image;
     cudaMalloc((void**)&d_error, sizeof(rcr::CudaError));
     cudaMemcpy(d_error, &h_error, sizeof(rcr::CudaError), cudaMemcpyHostToDevice);
-    cudaMalloc((void**)&d_image, sizeof(rcr::matrix<height, width, rcr::hitPos>));
-    cudaMemcpy(d_image, &h_image, sizeof(rcr::matrix<height, width, rcr::hitPos>), cudaMemcpyHostToDevice);
+
+    const size_t width = 512;
+    const size_t height = 512;
 
     rcr::Triangle *d_triangles = createTriangle();
+    rcr::matrixh<height, width, rcr::hitPos> h_image{};
+    rcr::matrixh<height, width, rcr::hitPos> *d_image;
 
-    int numThreadsPerBlock = 512;
-    int numBlocks = (1 * width * height + numThreadsPerBlock - 1) / numThreadsPerBlock;
-    std::cout << numThreadsPerBlock << " " << numBlocks << std::endl;
+    h_image.moveToDevice();
+
+    cudaMalloc((void**)&d_image, sizeof(rcr::matrixh<2, 2, rcr::hitPos>));
+    cudaMemcpy(d_image, &h_image, sizeof(rcr::matrixh<2, 2, rcr::hitPos>), cudaMemcpyHostToDevice);
 
     auto start = std::chrono::high_resolution_clock::now();
 
-    kernelRender<height, width><<<numBlocks, numThreadsPerBlock>>>(d_image, d_triangles, 1, d_error);
+    std::pair<int, int> dimensions = getNumThreadsBlocks(width, height, 512);
+
+    kernelRender<height, width><<<dimensions.first, dimensions.second>>>(d_image, d_triangles, 1, d_error);
 
     checkCudaError(cudaGetLastError(), "kernel launch");
     checkCudaError(cudaDeviceSynchronize(), "cudaDeviceSynchronize");
@@ -98,7 +157,8 @@ int main() {
         std::cerr << e.where() << ": " << e.what() << std::endl;
     }
 
-    cudaMemcpy(&h_image, d_image, sizeof(rcr::matrix<height, width, rcr::hitPos>), cudaMemcpyDeviceToHost);
+    cudaMemcpy(&h_image, d_image, sizeof(rcr::matrixh<2, 2, rcr::hitPos>), cudaMemcpyDeviceToHost);
+    h_image.moveToHost();
 
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> duration = end - start;
@@ -106,7 +166,6 @@ int main() {
 
     cudaFree(d_triangles);
     cudaFree(d_error);
-    cudaFree(d_image);
 
     tempCreateImage<height, width>(h_image);
 
