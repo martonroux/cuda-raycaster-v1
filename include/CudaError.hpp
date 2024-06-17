@@ -37,11 +37,34 @@ namespace rcr {
     public:
         CudaError() = default;
 
+        __host__ static CudaError *createDeviceCudaError() {
+            CudaError temp{};
+            CudaError *d_error;
+
+            cudaMalloc((void**)&d_error, sizeof(CudaError));
+            cudaMemcpy(d_error, &temp, sizeof(CudaError), cudaMemcpyHostToDevice);
+            return d_error;
+        }
+
+        __host__ static void checkDeviceCudaError(CudaError *d_error) {
+            CudaError h_error{};
+
+            cudaMemcpy(&h_error, d_error, sizeof(CudaError), cudaMemcpyDeviceToHost);
+
+            try {
+                h_error.throwException();
+            } catch (const CudaException& e) {
+                std::cerr << e.where() << ": " << e.what() << std::endl;
+            }
+        }
+
         __device__ __host__ bool hasError() const noexcept { return _hasError; }
 
         __device__ void setException(const char* what, const char* where) {
             if (_what[0] != '\0' || _where[0] != '\0')
                 return;
+            _hasError = true;
+
             for (int i = 0; i < CUDA_ERROR_MSG_CAP_SIZE; ++i) {
                 _what[i] = what[i];
                 _where[i] = where[i];
