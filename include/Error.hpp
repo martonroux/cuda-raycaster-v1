@@ -25,7 +25,7 @@ namespace rcr {
 
     class MatrixError : public HostError {
     public:
-        MatrixError(std::string what, std::string where) : MatrixError(what, where) {}
+        MatrixError(std::string what, std::string where) : HostError(what, where) {}
     };
 
 }
