@@ -51,7 +51,6 @@ namespace rcr {
 
     template<size_t ROW, size_t COL, typename T>
     matrixh<ROW, COL, T>::~matrixh() {
-        if (d_values_) cudaFree(d_values_);
     }
 
     template<size_t ROW, size_t COL, typename T>
