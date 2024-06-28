@@ -12,7 +12,7 @@
 // Max grid size (x, y, z): (2147483647, 65535, 65535)
 
 template<size_t H, size_t W>
-__global__ void kernelRender(rcr::matrixh<H, W, rcr::hitPos> *image, rcr::Triangle *triangles, unsigned int nbTriangles, rcr::CudaError *error) {
+__global__ void kernelRender(rcr::matrix2<H, W, rcr::hitPos> *image, rcr::Triangle *triangles, unsigned int nbTriangles, rcr::CudaError *error) {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
     if (idx >= nbTriangles * H * W)
@@ -50,7 +50,7 @@ rcr::Triangle *createTriangle() {
 }
 
 template<size_t H, size_t W>
-void tempCreateImage(rcr::matrixh<H, W, rcr::hitPos> image) {
+void tempCreateImage(rcr::matrix2<H, W, rcr::hitPos> image) {
     cv::Mat temp(H, W, CV_8UC3, cv::Scalar(0, 0, 0));
 
     for (int i = 0; i < W; i++) {
@@ -75,13 +75,13 @@ int main() {
     const size_t height = 1080;
 
     rcr::Triangle *d_triangles = createTriangle();
-    rcr::matrixh<height, width, rcr::hitPos> h_image{};
-    rcr::matrixh<height, width, rcr::hitPos> *d_image;
+    rcr::matrix2<height, width, rcr::hitPos> h_image{};
+    rcr::matrix2<height, width, rcr::hitPos> *d_image;
 
     h_image.moveToDevice();
 
-    cudaMalloc((void**)&d_image, sizeof(rcr::matrixh<width, height, rcr::hitPos>));
-    cudaMemcpy(d_image, &h_image, sizeof(rcr::matrixh<width, height, rcr::hitPos>), cudaMemcpyHostToDevice);
+    cudaMalloc((void**)&d_image, sizeof(rcr::matrix2<width, height, rcr::hitPos>));
+    cudaMemcpy(d_image, &h_image, sizeof(rcr::matrix2<width, height, rcr::hitPos>), cudaMemcpyHostToDevice);
 
     std::pair<int, int> dimensions = getNumThreadsBlocks(width, height, 512);
 
@@ -99,7 +99,7 @@ int main() {
 
     rcr::CudaError::checkDeviceCudaError(d_error);
 
-    cudaMemcpy(&h_image, d_image, sizeof(rcr::matrixh<width, height, rcr::hitPos>), cudaMemcpyDeviceToHost);
+    cudaMemcpy(&h_image, d_image, sizeof(rcr::matrix2<width, height, rcr::hitPos>), cudaMemcpyDeviceToHost);
     h_image.moveToHost();
 
     cudaFree(d_triangles);

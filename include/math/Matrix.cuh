@@ -14,14 +14,14 @@ namespace rcr {
 
     /* -------------------------- 2D MATRIX -------------------------- */
     template<size_t ROW, size_t COL, typename T>
-    class matrixh {
+    class matrix2 {
         T *h_values_ = nullptr;
         T *d_values_ = nullptr;
 
     public:
-        __host__ matrixh();
-        __host__ matrixh(T *values);
-        __host__ ~matrixh();
+        __host__ matrix2();
+        __host__ matrix2(T *values);
+        __host__ ~matrix2();
 
         __host__ void moveToDevice();
         __host__ void moveToHost();
@@ -31,48 +31,48 @@ namespace rcr {
     };
 
     template<size_t ROW, size_t COL, typename T>
-    matrixh<ROW, COL, T>::matrixh() {
+    matrix2<ROW, COL, T>::matrix2() {
         h_values_ = (T*)malloc(sizeof(T) * ROW * COL);
 
         if (h_values_ == nullptr)
-            throw MatrixError("Host memory allocation failed", "Matrix.cuh | matrixh::matrixh");
+            throw MatrixError("Host memory allocation failed", "Matrix.cuh | matrix2::matrix2");
     }
 
     template<size_t ROW, size_t COL, typename T>
-    matrixh<ROW, COL, T>::matrixh(T *values) {
+    matrix2<ROW, COL, T>::matrix2(T *values) {
         h_values_ = (T*)malloc(sizeof(T) * ROW * COL);
 
         if (h_values_ == nullptr)
-            throw MatrixError("Host memory allocation failed", "Matrix.cuh | matrixh::matrixh");
+            throw MatrixError("Host memory allocation failed", "Matrix.cuh | matrix2::matrix2");
 
         for (int i = 0; i < ROW * COL; i++)
             h_values_[i] = values[i];
     }
 
     template<size_t ROW, size_t COL, typename T>
-    matrixh<ROW, COL, T>::~matrixh() {
+    matrix2<ROW, COL, T>::~matrix2() {
     }
 
     template<size_t ROW, size_t COL, typename T>
-    void matrixh<ROW, COL, T>::moveToDevice() {
+    void matrix2<ROW, COL, T>::moveToDevice() {
         if (d_values_ != nullptr) {
             cudaFree(d_values_);
         }
         cudaError_t err = cudaMalloc((void**)&d_values_, sizeof(T) * ROW * COL);
 
         if (err != cudaSuccess)
-            throw MatrixError("CUDA memory allocation failed: " + std::string(cudaGetErrorString(err)), "Matrix.cuh | matrixh::moveToDevice");
+            throw MatrixError("CUDA memory allocation failed: " + std::string(cudaGetErrorString(err)), "Matrix.cuh | matrix2::moveToDevice");
 
         err = cudaMemcpy(d_values_, h_values_, sizeof(T) * ROW * COL, cudaMemcpyHostToDevice);
 
         if (err != cudaSuccess)
-            throw MatrixError("CUDA memory copy to device failed: " + std::string(cudaGetErrorString(err)), "Matrix.cuh | matrixh::moveToDevice");
+            throw MatrixError("CUDA memory copy to device failed: " + std::string(cudaGetErrorString(err)), "Matrix.cuh | matrix2::moveToDevice");
     }
 
     template<size_t ROW, size_t COL, typename T>
-    void matrixh<ROW, COL, T>::moveToHost() {
+    void matrix2<ROW, COL, T>::moveToHost() {
         if (d_values_ == nullptr || h_values_ == nullptr)
-            throw MatrixError("CUDA memory copy to host failed: null pointer", "Matrix.cuh | matrixh::moveToHost");
+            throw MatrixError("CUDA memory copy to host failed: null pointer", "Matrix.cuh | matrix2::moveToHost");
 
         free(h_values_);
         h_values_ = (T*)malloc(sizeof(T) * ROW * COL);
@@ -80,11 +80,11 @@ namespace rcr {
         cudaError_t err = cudaMemcpy(h_values_, d_values_, sizeof(T) * ROW * COL, cudaMemcpyDeviceToHost);
 
         if (err != cudaSuccess)
-            throw MatrixError("CUDA memory copy to host failed: " + std::string(cudaGetErrorString(err)), "Matrix.cuh | matrixh::moveToHost");
+            throw MatrixError("CUDA memory copy to host failed: " + std::string(cudaGetErrorString(err)), "Matrix.cuh | matrix2::moveToHost");
     }
 
     template<size_t ROW, size_t COL, typename T>
-    T & matrixh<ROW, COL, T>::operator()(size_t row, size_t col, CudaError *cuda_error) {
+    T & matrix2<ROW, COL, T>::operator()(size_t row, size_t col, CudaError *cuda_error) {
 #ifdef __CUDA_ARCH__
         if (row > ROW || col > COL) {
             cuda_error->setException("Tried to access out of bounds element in matrix.", "Matrix.cuh | operator()");
@@ -97,7 +97,7 @@ namespace rcr {
     }
 
     template<size_t ROW, size_t COL, typename T>
-    const T& matrixh<ROW, COL, T>::operator()(size_t row, size_t col, CudaError *cuda_error) const {
+    const T& matrix2<ROW, COL, T>::operator()(size_t row, size_t col, CudaError *cuda_error) const {
 #ifdef __CUDA_ARCH__
         if (row > ROW || col > COL) {
             cuda_error->setException("Tried to access out of bounds element in matrix.", "Matrix.cuh | operator() const");

@@ -46,7 +46,7 @@ namespace rcr {
 
     template<size_t H, size_t W>
     __device__ void render(
-            matrixh<H, W, hitPos> *image,
+            matrix2<H, W, hitPos> *image,
             Triangle *triangles,
             unsigned int nbTriangles,
             rendererData data,
