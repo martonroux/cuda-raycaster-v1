@@ -32,6 +32,7 @@ add_executable(raycaster
         include/math/RGB.cuh
         include/math/Matrix2.cuh
         include/Error.hpp
+        include/math/Matrix3.cuh
 )
 
 set_target_properties(raycaster PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
