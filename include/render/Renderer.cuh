@@ -10,7 +10,7 @@
 #include "CudaError.hpp"
 #include "shapes/Triangle.hpp"
 #include "shapes/Triangle.hpp"
-#include "math/Matrix.cuh"
+#include "math/Matrix2.cuh"
 #include "math/RGB.cuh"
 
 namespace rcr {

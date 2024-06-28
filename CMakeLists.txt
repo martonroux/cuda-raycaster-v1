@@ -30,7 +30,7 @@ add_executable(raycaster
         include/shapes/Triangle.hpp
         include/render/Renderer.cuh
         include/math/RGB.cuh
-        include/math/Matrix.cuh
+        include/math/Matrix2.cuh
         include/Error.hpp
 )
 

@@ -2,6 +2,7 @@
 #include "CudaError.hpp"
 #include "shapes/Triangle.hpp"
 #include "render/Renderer.cuh"
+#include "math/Matrix2.cuh"
 
 #include <chrono>
 #include <opencv2/opencv.hpp>
