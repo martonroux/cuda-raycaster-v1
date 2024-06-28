@@ -1,6 +1,7 @@
 #include <iostream>
 #include "CudaError.hpp"
 #include "shapes/Triangle.hpp"
+#include "math/Matrix2.cuh"
 
 #include <chrono>
 #include <opencv2/opencv.hpp>
@@ -15,10 +16,12 @@ template<size_t H, size_t W>
 __global__ void kernelRender(rcr::matrixh<H, W, rcr::hitPos> *image, rcr::Triangle *triangles, unsigned int nbTriangles, rcr::CudaError *error) {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
-    if (idx >= nbTriangles * H * W)
+    if (idx >= nbTriangles * H * W) {
+        printf("Skipping thread %d\n", idx);
         return;
+    }
     rcr::screenData screen_data = {
-        {-2, -1, 0},
+        {-2, -2, 0},
         {4, 0, 0},
         {0, 2, 0}
     };
@@ -55,7 +58,7 @@ void tempCreateImage(rcr::matrixh<H, W, rcr::hitPos> image) {
 
     for (int i = 0; i < W; i++) {
         for (int j = 0; j < H; j++) {
-            temp.at<cv::Vec3b>(j, i)[0] = image(j, i).hit ? 255 : 0;
+            temp.at<cv::Vec3b>(j, i)[0] = image(j, i, nullptr).hit ? 255 : 0;
         }
     }
     cv::imshow("Raycaster", temp);
@@ -87,7 +90,8 @@ int main() {
 
     auto start = std::chrono::high_resolution_clock::now();
 
-    kernelRender<height, width><<<dimensions.first, dimensions.second>>>(d_image, d_triangles, 1, nullptr);
+    std::cout << "Blocks: " << dimensions.first << ", threads per block: " << dimensions.second << std::endl;
+    kernelRender<height, width><<<dimensions.first, dimensions.second>>>(d_image, d_triangles, 1, d_error);
 
     checkCudaError(cudaGetLastError(), "kernel launch");
     checkCudaError(cudaDeviceSynchronize(), "cudaDeviceSynchronize");
