@@ -65,8 +65,8 @@ namespace rcr {
         ray ray = getPixelRay(u, v, data, error);
         hitPos pos = triangles[triangleId].hit(ray);
 
-        (*image)(pixels[0], pixels[1]).hit = pos.hit;
-        (*image)(pixels[0], pixels[1]).pos = pos.pos;
+        (*image)(pixels[1], pixels[0], error).hit = pos.hit;
+        (*image)(pixels[1], pixels[0], error).pos = pos.pos;
     }
 
 } // rcr
