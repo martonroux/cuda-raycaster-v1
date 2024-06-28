@@ -26,8 +26,8 @@ namespace rcr {
         __host__ void moveToDevice();
         __host__ void moveToHost();
 
-        __device__ __host__ T& operator()(size_t row, size_t col);
-        __device__ __host__ const T& operator()(size_t row, size_t col) const;
+        __device__ __host__ T& operator()(size_t row, size_t col, CudaError *cuda_error);
+        __device__ __host__ const T& operator()(size_t row, size_t col, CudaError *cuda_error) const;
     };
 
     template<size_t ROW, size_t COL, typename T>
@@ -85,8 +85,12 @@ namespace rcr {
     }
 
     template<size_t ROW, size_t COL, typename T>
-    T & matrixh<ROW, COL, T>::operator()(size_t row, size_t col) {
+    T & matrixh<ROW, COL, T>::operator()(size_t row, size_t col, CudaError *cuda_error) {
 #ifdef __CUDA_ARCH__
+        if (row > ROW || col > COL) {
+            cuda_error->setException("Tried to access out of bounds element in matrix.", "Matrix.cuh | operator()");
+            return d_values_[0];
+        }
         return d_values_[col + row * COL];
 #else
         return h_values_[col + row * COL];
@@ -94,8 +98,12 @@ namespace rcr {
     }
 
     template<size_t ROW, size_t COL, typename T>
-    const T& matrixh<ROW, COL, T>::operator()(size_t row, size_t col) const {
+    const T& matrixh<ROW, COL, T>::operator()(size_t row, size_t col, CudaError *cuda_error) const {
 #ifdef __CUDA_ARCH__
+        if (row > ROW || col > COL) {
+            cuda_error->setException("Tried to access out of bounds element in matrix.", "Matrix.cuh | operator() const");
+            return d_values_[0];
+        }
         return d_values_[col + row * COL];
 #else
         return h_values_[col + row * COL];
