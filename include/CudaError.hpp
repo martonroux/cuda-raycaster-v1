@@ -32,13 +32,14 @@ namespace rcr {
     class CudaError {
         char _what[CUDA_ERROR_MSG_CAP_SIZE] = {};
         char _where[CUDA_ERROR_MSG_CAP_SIZE] = {};
-        bool _hasError = false;
+        int _hasError = 0;
+        int _nbErrors;
 
     public:
         CudaError() = default;
 
         __host__ static CudaError *createDeviceCudaError() {
-            CudaError temp{};
+            CudaError temp;
             CudaError *d_error;
 
             cudaMalloc((void**)&d_error, sizeof(CudaError));
@@ -61,9 +62,15 @@ namespace rcr {
         __device__ __host__ bool hasError() const noexcept { return _hasError; }
 
         __device__ void setException(const char* what, const char* where) {
-            if (_what[0] != '\0' || _where[0] != '\0')
+            atomicAdd(&_nbErrors, 1);
+
+            if (_what[0] != '\0' || _where[0] != '\0') {
                 return;
-            _hasError = true;
+            }
+
+            if (_hasError == 1)
+                return;
+            atomicAdd(&_hasError, 1);
 
             for (int i = 0; i < CUDA_ERROR_MSG_CAP_SIZE; ++i) {
                 _what[i] = what[i];
@@ -75,7 +82,11 @@ namespace rcr {
         __host__ void throwException() const {
             if (_what[0] == '\0' && _where[0] == '\0')
                 return;
-            throw CudaException(_what, _where);
+            std::string finalString(_what);
+
+            if (_nbErrors > 1)
+                finalString += "\n=========== WARNING: " + std::to_string(_nbErrors - 1) + " other errors happened, but aren't displayed. ===========";
+            throw CudaException(finalString.c_str(), _where);
         }
     };
 
