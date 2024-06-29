@@ -68,9 +68,6 @@ namespace rcr {
     {
         int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
-        if (idx == 0) {
-            printf("%f %f %f\n", triangles[0].getP1().x, triangles[0].getP1().y, triangles[0].getP1().z);
-        }
         if (idx >= numTriangles * height * width)
             return;
         render(image, height, width, numTriangles, triangles, screen, error);

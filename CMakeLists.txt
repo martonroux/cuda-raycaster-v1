@@ -37,6 +37,10 @@ add_executable(raycaster
         include/cudaHelpers.h
         src/cudaHelpers.cu
         include/render/Renderer.cuh
+        src/inputs/Keyboard.cpp
+        include/inputs/Keyboard.hpp
+        src/inputs/Mouse.cpp
+        include/inputs/Mouse.hpp
 )
 
 set_target_properties(raycaster PROPERTIES CUDA_SEPARABLE_COMPILATION ON)

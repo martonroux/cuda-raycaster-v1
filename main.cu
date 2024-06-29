@@ -1,4 +1,6 @@
 #include "Displayer.hpp"
+#include <chrono>
+#include <thread>
 
 // Device 0: NVIDIA GeForce GTX 1080 Ti
 // Max threads per block: 1024
@@ -15,5 +17,13 @@ int main()
     displayer.addShape(rcr::Triangle{{-2, -4, 5}, {0, -5.5, 5}, {0, -4, 5}});
     displayer.addShape(rcr::Triangle{{2, -4, 5}, {0, -5.5, 5}, {0, -4, 5}});
 
-    displayer.render();
+    while (true) {
+        displayer.render();
+        rcr::Keyboard keyboard = displayer.getKeyboardFrame();
+        rcr::Mouse mouse = displayer.getMouseFrame();
+
+        if (keyboard.isKeyPressed(rcr::Keys::KEY_Q))
+            break;
+        std::cout << "Mouse pos: " << mouse.getMousePos().first << ", " << mouse.getMousePos().second << std::endl;
+    }
 }
