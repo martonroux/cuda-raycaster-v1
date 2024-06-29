@@ -37,9 +37,11 @@ namespace rcr {
         void tempCreateImage(rcr::matrix3<rcr::hitPos> image);
 
         [[nodiscard]] std::pair<int, int> getNumThreadsBlocks() const;
-        [[nodiscard]] matrix3<rcr::hitPos> *createHitMatrix() const;
-        static matrix3<rcr::hitPos> retrieveDeviceMatrix(matrix3<rcr::hitPos> *d_matrix, size_t row, size_t col, size_t dep);
+        // [[nodiscard]] matrix3<rcr::hitPos> *createHitMatrix() const;
+        // void retrieveDeviceMatrix(matrix3<rcr::hitPos> *d_matrix, size_t row, size_t col, size_t dep);
         [[nodiscard]] Triangle *createTriangleArray() const;
+        [[nodiscard]] hitPos *getDeviceHits() const;
+        [[nodiscard]] hitPos *moveHitsToHost(hitPos *d_hits) const;
 
     public:
         __host__ Displayer(size_t width, size_t height, size_t fps, rendererData data);

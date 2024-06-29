@@ -63,14 +63,15 @@ namespace rcr {
         (*image)(pixels[1], pixels[0], triangleId, error).pos = pos.pos;
     }
 
-    inline __global__ void kernelRender(matrix3<rcr::hitPos> *image, size_t height, size_t width, size_t numTriangles,
+    inline __global__ void kernelRender(rcr::hitPos *image, size_t height, size_t width, size_t numTriangles,
         rcr::Triangle *triangles, rcr::rendererData screen, rcr::CudaError *error)
     {
+        matrix3<rcr::hitPos> hits{height, width, numTriangles, image};
         int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
         if (idx >= numTriangles * height * width)
             return;
-        render(image, height, width, numTriangles, triangles, screen, error);
+        render(&hits, height, width, numTriangles, triangles, screen, error);
     }
 
 }
