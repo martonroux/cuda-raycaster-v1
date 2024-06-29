@@ -9,8 +9,7 @@
 
 #include "CudaError.hpp"
 #include "shapes/Triangle.hpp"
-#include "shapes/Triangle.hpp"
-#include "math/Matrix2.cuh"
+#include "math/Matrix3.cuh"
 #include "math/RGB.cuh"
 
 namespace rcr {
@@ -44,17 +43,17 @@ namespace rcr {
         return {data.camPos, finalDirection};
     }
 
-    template<size_t H, size_t W>
+    template<size_t H, size_t W, size_t nTriangles>
     __device__ void render(
-            matrix2<H, W, hitPos> *image,
+            matrix3<H, W, nTriangles, hitPos> *image,
             Triangle *triangles,
-            unsigned int nbTriangles,
             rendererData data,
             CudaError *error) {
         int idx = blockIdx.x * blockDim.x + threadIdx.x;
-        int nbElems = static_cast<int>(nbTriangles);
-        int triangleId = idx % nbElems;
+        int triangleId = idx / (H * W);
         int pixels[2] = {};
+
+        idx = idx % (H * W);
 
         pixels[0] = idx % W;
         pixels[1] = idx / W;
@@ -65,8 +64,8 @@ namespace rcr {
         ray ray = getPixelRay(u, v, data, error);
         hitPos pos = triangles[triangleId].hit(ray);
 
-        (*image)(pixels[1], pixels[0], error).hit = pos.hit;
-        (*image)(pixels[1], pixels[0], error).pos = pos.pos;
+        (*image)(pixels[1], pixels[0], triangleId, error).hit = pos.hit;
+        (*image)(pixels[1], pixels[0], triangleId, error).pos = pos.pos;
     }
 
 } // rcr

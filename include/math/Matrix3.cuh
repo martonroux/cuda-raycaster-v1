@@ -87,6 +87,8 @@ namespace rcr {
         }
         return d_values_[dep + col * DEP + row * COL * DEP];
 #else
+        if (row >= ROW || col >= COL || dep >= DEP)
+            throw MatrixError("Tried to access out of bounds element in matrix.", "Matrix3.cuh | matrix3::operator() const");
         return h_values_[dep + col * DEP + row * COL * DEP];
 #endif
     }
@@ -100,6 +102,8 @@ namespace rcr {
         }
         return d_values_[dep + col * DEP + row * COL * DEP];
 #else
+        if (row >= ROW || col >= COL || dep >= DEP)
+            throw MatrixError("Tried to access out of bounds element in matrix.", "Matrix3.cuh | matrix3::operator() const");
         return h_values_[dep + col * DEP + row * COL * DEP];
 #endif
     }
