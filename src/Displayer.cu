@@ -8,21 +8,31 @@
 
 namespace rcr {
 
-    void Displayer::tempCreateImage(rcr::matrix3<rcr::hitPos> image) {
+    void Displayer::createImage(rcr::matrix3<rcr::hitPos> image) {
+        #pragma omp parallel for collapse(2)
+        for (int j = 0; j < height_; j++) {
+            for (int i = 0; i < width_; i++) {
+                auto* pixel = img_.ptr<uchar>(j, i);
+                pixel[0] = image(j, i, 0, nullptr).hit ? 255 : 0;
+                if (shapes_.size() > 1)
+                    pixel[1] = image(j, i, 1, nullptr).hit ? 255 : 0;
+                if (shapes_.size() > 2)
+                    pixel[2] = image(j, i, 2, nullptr).hit ? 255 : 0;
+            }
+        }
+    }
+
+    void Displayer::displayImage() {
         keyboard_.resetPresses();
         mouse_.resetPresses();
 
-        for (int i = 0; i < width_; i++) {
-            for (int j = 0; j < height_; j++) {
-                img_.at<cv::Vec3b>(j, i)[0] = image(j, i, 0, nullptr).hit ? 255 : 0;
-                if (shapes_.size() > 1)
-                    img_.at<cv::Vec3b>(j, i)[1] = image(j, i, 1, nullptr).hit ? 255 : 0;
-                if (shapes_.size() > 2)
-                    img_.at<cv::Vec3b>(j, i)[2] = image(j, i, 2, nullptr).hit ? 255 : 0;
-            }
-        }
         cv::imshow("Raycaster", img_);
-        int key = cv::waitKey(static_cast<int>(1.f / static_cast<float>(fps_) * 1000));
+
+        int delay = static_cast<int>(1.f / static_cast<float>(fps_) * 1000);
+
+        if (delay == 0)
+            delay = 1;
+        int key = cv::waitKey(delay);
 
         keyboard_.setKeyPressed(static_cast<Keys>(key), true);
     }
@@ -33,33 +43,6 @@ namespace rcr {
 
         return {numBlocks, NUM_THREADS_PER_BLOCK};
     }
-
-    // matrix3<rcr::hitPos> *Displayer::createHitMatrix() const
-    // {
-    //     rcr::hitPos *d_values;
-    //
-    //     cudaMalloc((void**)&d_values, sizeof(rcr::hitPos) * height_ * width_ * shapes_.size());
-    //
-    //     rcr::matrix3<rcr::hitPos> h_image{height_, width_, shapes_.size(), d_values};
-    //     rcr::matrix3<rcr::hitPos> *d_image;
-    //
-    //     cudaMalloc((void **) &d_image, sizeof(rcr::matrix3<rcr::hitPos>));
-    //     cudaMemcpy(d_image, &h_image, sizeof(rcr::matrix3<rcr::hitPos>), cudaMemcpyHostToDevice);
-    //
-    //     return d_image;
-    // }
-    //
-    // matrix3<rcr::hitPos> Displayer::retrieveDeviceMatrix(matrix3<rcr::hitPos> *d_matrix, size_t row, size_t col,
-    //                                                      size_t dep)
-    // {
-    //     auto *h_matrix = (matrix3<rcr::hitPos>*)malloc(sizeof(matrix3<rcr::hitPos>));
-    //     auto *h_values = (rcr::hitPos*)malloc(sizeof(rcr::hitPos) * row * col * dep);
-    //
-    //     cudaMemcpy(h_matrix, d_matrix, sizeof(rcr::matrix3<rcr::hitPos>), cudaMemcpyDeviceToHost);
-    //     cudaMemcpy(h_values, h_matrix->getValues(), sizeof(rcr::hitPos) * row * col * dep, cudaMemcpyDeviceToHost);
-    //
-    //     return matrix3{row, col, dep, h_values};
-    // }
 
     Triangle *Displayer::createTriangleArray() const
     {
@@ -119,7 +102,8 @@ namespace rcr {
 
         h_hits = moveHitsToHost(d_hits);
 
-        // tempCreateImage(matrix3{height_, width_, shapes_.size(), h_hits});
+        createImage(matrix3{height_, width_, shapes_.size(), h_hits});
+        displayImage();
 
         free(h_hits);
 

@@ -34,7 +34,8 @@ namespace rcr {
         Keyboard keyboard_{};
         Mouse mouse_{};
 
-        void tempCreateImage(rcr::matrix3<rcr::hitPos> image);
+        void createImage(rcr::matrix3<rcr::hitPos> image);
+        void displayImage();
 
         [[nodiscard]] std::pair<int, int> getNumThreadsBlocks() const;
         // [[nodiscard]] matrix3<rcr::hitPos> *createHitMatrix() const;

@@ -13,7 +13,7 @@
 int main() {
     rcr::screenData screen = {{-4, -4, 0}, {8, 0, 0}, {0, 8, 0}};
     rcr::rendererData data = {{0, 0, -5}, screen};
-    rcr::Displayer displayer{500, 500, 60, data};
+    rcr::Displayer displayer{500, 500, 9999, data};
 
     displayer.addShape(rcr::Triangle{{0, 2, 5}, {-2, -4, 5}, {2, -4, 5}});
     displayer.addShape(rcr::Triangle{{-2, -4, 5}, {0, -5.5, 5}, {0, -4, 5}});
