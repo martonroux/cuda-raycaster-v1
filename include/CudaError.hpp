@@ -10,8 +10,9 @@
 #define CUDA_ERROR_MSG_CAP_SIZE 256
 
 #include <exception>
-#include <cstring> // For std::memcpy
+#include <cstring>
 #include <string>
+#include <iostream>
 
 namespace rcr {
 

@@ -1,33 +1,23 @@
 /*
 ** RAYCASTING LIBRARY
 ** Renderer.cuh
-** Created by marton on 15/06/24.
+** Created by marton on 29/06/24.
 */
 
-#ifndef RENDERER_HPP
-#define RENDERER_HPP
+#ifndef RENDERER_CUH
+#define RENDERER_CUH
 
-#include "CudaError.hpp"
-#include "shapes/Triangle.hpp"
 #include "math/Matrix3.cuh"
-#include "math/RGB.cuh"
+#include "math/Ray.cuh"
+#include "shapes/Triangle.hpp"
+#include "render/rendererData.h"
 
 namespace rcr {
 
-    typedef struct {
-        vec3<float> topLeft;
-        vec3<float> width;
-        vec3<float> height;
-    } screenData;
-
-    typedef struct {
-        vec3<float> camPos;
-        screenData screen;
-    } rendererData;
-
-    inline __device__ ray getPixelRay(float u, float v, rendererData data, CudaError *error) {
+    inline __device__ ray getPixelRay(float u, float v, rendererData data, CudaError *error)
+    {
         if (u > 1.0 || u < 0.0 || v > 1.0 || v < 0.0) {
-            error->setException("[INTERNAL] uv values are incorrect. Should be 0.0 >= u / v >= 1.0", "Renderer | getPixelRay");
+            error->setException("[INTERNAL] uv values are incorrect. Should be 0.0 >= u / v >= 1.0", "Renderer.cuh | getPixelRay");
             return {};
         }
 
@@ -43,23 +33,28 @@ namespace rcr {
         return {data.camPos, finalDirection};
     }
 
-    template<size_t H, size_t W, size_t nTriangles>
-    __device__ void render(
-            matrix3<H, W, nTriangles, hitPos> *image,
-            Triangle *triangles,
-            rendererData data,
-            CudaError *error) {
+    inline __device__ void render(matrix3<hitPos> *image, size_t height, size_t width, size_t numTriangles, Triangle *triangles,
+        rendererData data, CudaError *error)
+    {
         int idx = blockIdx.x * blockDim.x + threadIdx.x;
-        int triangleId = idx / (H * W);
+        int triangleId = idx / (height * width);
         int pixels[2] = {};
 
-        idx = idx % (H * W);
+        if (triangleId >= numTriangles) {
+            error->setException("[INTERNAL] Tried to assign a triangle to a thread that doesn't exist.", "Renderer.cuh | render");
+            return;
+        }
+        idx = idx % (height * width);
 
-        pixels[0] = idx % W;
-        pixels[1] = idx / W;
+        pixels[0] = idx % width;
+        pixels[1] = idx / width;
 
-        float u = pixels[0] / static_cast<float>(W - 1);
-        float v = pixels[1] / static_cast<float>(H - 1);
+        if (pixels[0] >= width || pixels[1] >= height) {
+            error->setException("[INTERNAL] Tried to assign a pixel to a thread that doesn't exist.", "Renderer.cuh | render");
+            return;
+        }
+        float u = pixels[0] / static_cast<float>(width - 1);
+        float v = pixels[1] / static_cast<float>(height - 1);
 
         ray ray = getPixelRay(u, v, data, error);
         hitPos pos = triangles[triangleId].hit(ray);
@@ -68,6 +63,19 @@ namespace rcr {
         (*image)(pixels[1], pixels[0], triangleId, error).pos = pos.pos;
     }
 
-} // rcr
+    inline __global__ void kernelRender(matrix3<rcr::hitPos> *image, size_t height, size_t width, size_t numTriangles,
+        rcr::Triangle *triangles, rcr::rendererData screen, rcr::CudaError *error)
+    {
+        int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
-#endif //RENDERER_HPP
+        if (idx == 0) {
+            printf("%f %f %f\n", triangles[0].getP1().x, triangles[0].getP1().y, triangles[0].getP1().z);
+        }
+        if (idx >= numTriangles * height * width)
+            return;
+        render(image, height, width, numTriangles, triangles, screen, error);
+    }
+
+}
+
+#endif //RENDERER_CUH
