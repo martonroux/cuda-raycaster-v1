@@ -41,6 +41,12 @@ add_executable(raycaster
         include/inputs/Keyboard.hpp
         src/inputs/Mouse.cpp
         include/inputs/Mouse.hpp
+        src/parsing/Parser.cu
+        include/parsing/Parser.hpp
+        src/shapes/ObjShape.cu
+        include/shapes/ObjShape.hpp
+        src/parsing/ObjParser.cu
+        include/parsing/ObjParser.hpp
 )
 
 set_target_properties(raycaster PROPERTIES CUDA_SEPARABLE_COMPILATION ON)

@@ -14,19 +14,25 @@
 
 #include <iostream>
 #include <chrono> // For time measurement
+#include "parsing/Parser.hpp"
+#include "math/Ray.cuh"
 
 int main() {
+    std::cout << "Size: " << sizeof(rcr::rgb) << std::endl;
+    rcr::ObjShape shape = rcr::Parser::parseOBJFile("./assets/Leaf/PUSHILIN_leaf.obj");
+
+    std::cout << "Number of triangles: " << shape.getTriangles().size() << std::endl;
     rcr::screenData screen = {{-4, -4, 0}, {8, 0, 0}, {0, 8, 0}};
-    rcr::rendererData data = {{0, 0, -5}, screen};
-    rcr::Displayer displayer{1920, 1080, 9999, data};
+    rcr::rendererData data = {{0, 0, -5}, {255, 0, 0}, screen};
+    rcr::Displayer displayer{500, 500, 9999, data};
 
     auto lastTime = std::chrono::high_resolution_clock::now();
     int frameCount = 0;
     const int updateInterval = 30; // Update FPS display every 30 frames
 
+    displayer.addShape(shape);
+
     while (true) {
-        displayer.addShape(rcr::Triangle{{0, 2, 5}, {-2, -4, 5}, {2, -4, 5}, {255, 255, 255}});
-        displayer.addShape(rcr::Triangle{{0, 6, 3}, {-2, -4, 7}, {2, -4, 7}, {0, 0, 255}});
 
         displayer.render();
 
@@ -45,8 +51,6 @@ int main() {
             lastTime = endTime;
             frameCount = 0;
         }
-
-        displayer.clear();
     }
 
     return 0;

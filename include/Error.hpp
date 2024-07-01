@@ -28,6 +28,11 @@ namespace rcr {
         MatrixError(std::string what, std::string where) : HostError(what, where) {}
     };
 
+    class ParserError : public HostError {
+    public:
+        ParserError(std::string what, std::string where) : HostError(what, where) {}
+    };
+
 }
 
 

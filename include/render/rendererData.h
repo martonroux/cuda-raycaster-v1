@@ -8,17 +8,19 @@
 #define SCREENDATA_H
 
 #include "math/Vec3.cuh"
+#include "math/RGB.cuh"
 
 namespace rcr {
 
     typedef struct {
-        rcr::vec3<float> topLeft;
-        rcr::vec3<float> width;
-        rcr::vec3<float> height;
+        vec3<float> topLeft;
+        vec3<float> width;
+        vec3<float> height;
     } screenData;
 
     typedef struct {
-        rcr::vec3<float> camPos;
+        vec3<float> camPos;
+        rgb backgroundColor;
         screenData screen;
     } rendererData;
 

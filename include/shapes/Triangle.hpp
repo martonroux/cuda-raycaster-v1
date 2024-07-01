@@ -23,6 +23,7 @@ namespace rcr {
 
     public:
         __host__ Triangle(vec3<float> p1, vec3<float> p2, vec3<float> p3, rgb color) : p1_(p1), p2_(p2), p3_(p3), color_(color) {}
+        __host__ Triangle(vec3<float> p1, vec3<float> p2, vec3<float> p3) : p1_(p1), p2_(p2), p3_(p3), color_({}) {}
         __host__ ~Triangle() = default;
 
         __device__ hitPos hit(ray ray) const;

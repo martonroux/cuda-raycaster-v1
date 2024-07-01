@@ -61,28 +61,28 @@ namespace rcr {
     hitPos *Displayer::getDeviceHits() const {
         hitPos *d_hits;
 
-        cudaMalloc((void**)&d_hits, sizeof(hitPos) * height_ * width_ * shapes_.size());
+        checkCudaError(cudaMalloc((void**)&d_hits, sizeof(hitPos) * height_ * width_ * shapes_.size()), "cudaMalloc device hits");
         return d_hits;
     }
 
     hitPos *Displayer::moveHitsToHost(hitPos *d_hits) const {
         auto *h_hits = (hitPos*)malloc(sizeof(hitPos) * height_ * width_ * shapes_.size());
 
-        cudaMemcpy(h_hits, d_hits, sizeof(hitPos) * height_ * width_ * shapes_.size(), cudaMemcpyDeviceToHost);
+        checkCudaError(cudaMemcpy(h_hits, d_hits, sizeof(hitPos) * height_ * width_ * shapes_.size(), cudaMemcpyDeviceToHost), "cudaMemcpy device to hosts hits");
         return h_hits;
     }
 
     rgb *Displayer::getDeviceImage() const {
         rgb *d_hits;
 
-        cudaMalloc((void**)&d_hits, sizeof(rgb) * height_ * width_);
+        checkCudaError(cudaMalloc((void**)&d_hits, sizeof(rgb) * height_ * width_), "cudaMalloc device image");
         return d_hits;
     }
 
     rgb *Displayer::moveImageToHost(rgb *d_image) const {
         auto *h_image = (rgb*)malloc(sizeof(rgb) * height_ * width_);
 
-        cudaMemcpy(h_image, d_image, sizeof(rgb) * height_ * width_, cudaMemcpyDeviceToHost);
+        checkCudaError(cudaMemcpy(h_image, d_image, sizeof(rgb) * height_ * width_, cudaMemcpyDeviceToHost), "cudaMemcpy device to host image");
         return h_image;
     }
 
@@ -103,6 +103,14 @@ namespace rcr {
     void Displayer::addShape(Triangle triangle)
     {
         shapes_.push_back(triangle);
+    }
+
+    void Displayer::addShape(const ObjShape &obj) {
+        std::vector<Triangle> vertices = obj.getTriangles();
+
+        for (const auto& triangle : vertices) {
+            shapes_.push_back(triangle);
+        }
     }
 
     void Displayer::moveCamera(vec3<float> offset) {
@@ -148,10 +156,6 @@ namespace rcr {
         cudaFree(d_error);
 
         prev_num_triangles_ = shapes_.size();
-    }
-
-    void Displayer::clear() {
-        shapes_.clear();
     }
 
     Keyboard Displayer::getKeyboardFrame() const {

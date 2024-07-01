@@ -10,6 +10,7 @@
 #define NUM_THREADS_PER_BLOCK 512
 
 #include "shapes/Triangle.hpp"
+#include "shapes/ObjShape.hpp"
 #include "math/RGB.cuh"
 #include "render/rendererData.h"
 #include "render/Renderer.cuh"
@@ -52,11 +53,11 @@ namespace rcr {
         __host__ ~Displayer();
 
         __host__ void addShape(Triangle triangle);
+        __host__ void addShape(const ObjShape &obj);
         __host__ void moveCamera(vec3<float> offset);
         __host__ void setCameraPos(vec3<float> pos);
 
         __host__ void render();
-        __host__ void clear();
 
         __host__ [[nodiscard]] Keyboard getKeyboardFrame() const;
         __host__ [[nodiscard]] Mouse getMouseFrame() const;

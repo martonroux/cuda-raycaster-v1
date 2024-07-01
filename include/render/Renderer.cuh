@@ -98,6 +98,8 @@ namespace rcr {
 
         if (smallestIdx != -1) {
             (*image)(pixels[1], pixels[0], error) = triangles[smallestIdx].getColor();
+        } else {
+            (*image)(pixels[1], pixels[0], error) = screen.backgroundColor;
         }
     }
 
