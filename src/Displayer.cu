@@ -9,13 +9,13 @@
 namespace rcr {
 
     void Displayer::createImage(matrix2<rgb> image) {
+        rgb *data = image.getValues();
+
         #pragma omp parallel for collapse(2)
         for (int j = 0; j < height_; j++) {
             for (int i = 0; i < width_; i++) {
                 auto* pixel = img_.ptr<uchar>(j, i);
-                pixel[0] = image(j, i, nullptr).b;
-                pixel[1] = image(j, i, nullptr).g;
-                pixel[2] = image(j, i, nullptr).r;
+                memcpy(pixel, &data[j * width_ + i], sizeof(uchar) * 3);
             }
         }
     }

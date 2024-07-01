@@ -1,6 +1,11 @@
+/*
+** RAYCASTING LIBRARY
+** main.cuh
+** Created by marton on 20/05/24.
+*/
+
 #include "Displayer.hpp"
 #include <chrono>
-#include "math/Matrix2.cuh"
 
 // Device 0: NVIDIA GeForce GTX 1080 Ti
 // Max threads per block: 1024
@@ -21,8 +26,7 @@ int main() {
 
     while (true) {
         displayer.addShape(rcr::Triangle{{0, 2, 5}, {-2, -4, 5}, {2, -4, 5}, {255, 255, 255}});
-        displayer.addShape(rcr::Triangle{{0, 6, 3}, {-2, -4, 7}, {2, -4, 7}, {255, 0, 0}});
-        // displayer.addShape(rcr::Triangle{{2, -4, 5}, {0, -5.5, 5}, {0, -4, 5}});
+        displayer.addShape(rcr::Triangle{{0, 6, 3}, {-2, -4, 7}, {2, -4, 7}, {0, 0, 255}});
 
         displayer.render();
 
