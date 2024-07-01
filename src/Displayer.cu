@@ -90,6 +90,14 @@ namespace rcr {
         shapes_.push_back(triangle);
     }
 
+    void Displayer::moveCamera(vec3<float> offset) {
+        screen_.camPos.sumSingle(&offset, &screen_.camPos);
+    }
+
+    void Displayer::setCameraPos(vec3<float> pos) {
+        screen_.camPos = pos;
+    }
+
     void Displayer::render()
     {
         hitPos *d_hits = getDeviceHits();
@@ -100,10 +108,15 @@ namespace rcr {
 
         kernelRender<<<dimensions.first, dimensions.second>>>(d_hits, height_, width_, shapes_.size(), d_triangles, screen_, d_error);
 
+        checkCudaError(cudaGetLastError(), "kernel launch");
+        checkCudaError(cudaDeviceSynchronize(), "cudaDeviceSynchronize");
+
         h_hits = moveHitsToHost(d_hits);
 
-        createImage(matrix3{height_, width_, shapes_.size(), h_hits});
+        // createImage(matrix3{height_, width_, shapes_.size(), h_hits});
         displayImage();
+
+        rcr::CudaError::checkDeviceCudaError(d_error);
 
         free(h_hits);
 
@@ -114,10 +127,12 @@ namespace rcr {
 
     void Displayer::clear() {
         img_ = cv::Mat(static_cast<int>(height_), static_cast<int>(width_), CV_8UC3, cv::Scalar(0, 0, 0));
+        shapes_.clear();
     }
 
     void Displayer::clear(rgb backgroundColor) {
         img_ = cv::Mat(static_cast<int>(height_), static_cast<int>(width_), CV_8UC3, cv::Scalar(backgroundColor.b, backgroundColor.g, backgroundColor.r));
+        shapes_.clear();
     }
 
     Keyboard Displayer::getKeyboardFrame() const {
@@ -126,5 +141,9 @@ namespace rcr {
 
     Mouse Displayer::getMouseFrame() const {
         return mouse_;
+    }
+
+    vec3<float> Displayer::getCameraPos() const {
+        return screen_.camPos;
     }
 } // rcr

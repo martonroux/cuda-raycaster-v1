@@ -1,6 +1,6 @@
 #include "Displayer.hpp"
 #include <chrono>
-#include <thread>
+#include "math/Matrix2.cuh"
 
 // Device 0: NVIDIA GeForce GTX 1080 Ti
 // Max threads per block: 1024
@@ -13,20 +13,19 @@
 int main() {
     rcr::screenData screen = {{-4, -4, 0}, {8, 0, 0}, {0, 8, 0}};
     rcr::rendererData data = {{0, 0, -5}, screen};
-    rcr::Displayer displayer{500, 500, 9999, data};
-
-    displayer.addShape(rcr::Triangle{{0, 2, 5}, {-2, -4, 5}, {2, -4, 5}});
-    displayer.addShape(rcr::Triangle{{-2, -4, 5}, {0, -5.5, 5}, {0, -4, 5}});
-    displayer.addShape(rcr::Triangle{{2, -4, 5}, {0, -5.5, 5}, {0, -4, 5}});
+    rcr::Displayer displayer{1920, 1080, 9999, data};
 
     auto lastTime = std::chrono::high_resolution_clock::now();
     int frameCount = 0;
     const int updateInterval = 30; // Update FPS display every 30 frames
 
     while (true) {
-        auto startTime = std::chrono::high_resolution_clock::now();
+        displayer.addShape(rcr::Triangle{{0, 2, 5}, {-2, -4, 5}, {2, -4, 5}});
+        // displayer.addShape(rcr::Triangle{{-2, -4, 5}, {0, -5.5, 5}, {0, -4, 5}});
+        // displayer.addShape(rcr::Triangle{{2, -4, 5}, {0, -5.5, 5}, {0, -4, 5}});
 
         displayer.render();
+
         rcr::Keyboard keyboard = displayer.getKeyboardFrame();
         rcr::Mouse mouse = displayer.getMouseFrame();
 
@@ -43,8 +42,7 @@ int main() {
             frameCount = 0;
         }
 
-        auto endTime = std::chrono::high_resolution_clock::now();
-        std::chrono::duration<double, std::milli> frameTime = endTime - startTime;
+        displayer.clear();
     }
 
     return 0;

@@ -49,11 +49,16 @@ namespace rcr {
         __host__ ~Displayer();
 
         __host__ void addShape(Triangle triangle);
+        __host__ void moveCamera(vec3<float> offset);
+        __host__ void setCameraPos(vec3<float> pos);
+
         __host__ void render();
         __host__ void clear();
         __host__ void clear(rgb backgroundColor);
+
         __host__ [[nodiscard]] Keyboard getKeyboardFrame() const;
         __host__ [[nodiscard]] Mouse getMouseFrame() const;
+        __host__ [[nodiscard]] vec3<float> getCameraPos() const;
     };
 
 } // rcr

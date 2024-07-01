@@ -27,8 +27,8 @@ namespace rcr {
 
         __host__ __device__ [[nodiscard]] T *getValues() const { return values_; }
 
-        __device__ __host__ T& operator()(size_t row, size_t col, size_t dep, CudaError *cuda_error);
-        __device__ __host__ const T& operator()(size_t row, size_t col, size_t dep, CudaError *cuda_error) const;
+        __host__ __device__ T& operator()(size_t row, size_t col, size_t dep, CudaError *cuda_error);
+        __host__ __device__ const T& operator()(size_t row, size_t col, size_t dep, CudaError *cuda_error) const;
     };
 
     template<typename T>
