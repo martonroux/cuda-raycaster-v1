@@ -8,16 +8,14 @@
 
 namespace rcr {
 
-    void Displayer::createImage(rcr::matrix3<rcr::hitPos> image) {
+    void Displayer::createImage(matrix2<rgb> image) {
         #pragma omp parallel for collapse(2)
         for (int j = 0; j < height_; j++) {
             for (int i = 0; i < width_; i++) {
                 auto* pixel = img_.ptr<uchar>(j, i);
-                pixel[0] = image(j, i, 0, nullptr).hit ? 255 : 0;
-                if (shapes_.size() > 1)
-                    pixel[1] = image(j, i, 1, nullptr).hit ? 255 : 0;
-                if (shapes_.size() > 2)
-                    pixel[2] = image(j, i, 2, nullptr).hit ? 255 : 0;
+                pixel[0] = image(j, i, nullptr).b;
+                pixel[1] = image(j, i, nullptr).g;
+                pixel[2] = image(j, i, nullptr).r;
             }
         }
     }
@@ -37,9 +35,9 @@ namespace rcr {
         keyboard_.setKeyPressed(static_cast<Keys>(key), true);
     }
 
-    std::pair<int, int> Displayer::getNumThreadsBlocks() const
+    std::pair<int, int> Displayer::getNumThreadsBlocks(size_t numTriangles) const
     {
-        int numBlocks = (static_cast<int>(shapes_.size() * width_ * height_) + NUM_THREADS_PER_BLOCK - 1) / NUM_THREADS_PER_BLOCK;
+        int numBlocks = (static_cast<int>(numTriangles * width_ * height_) + NUM_THREADS_PER_BLOCK - 1) / NUM_THREADS_PER_BLOCK;
 
         return {numBlocks, NUM_THREADS_PER_BLOCK};
     }
@@ -74,6 +72,20 @@ namespace rcr {
         return h_hits;
     }
 
+    rgb *Displayer::getDeviceImage() const {
+        rgb *d_hits;
+
+        cudaMalloc((void**)&d_hits, sizeof(rgb) * height_ * width_);
+        return d_hits;
+    }
+
+    rgb *Displayer::moveImageToHost(rgb *d_image) const {
+        auto *h_image = (rgb*)malloc(sizeof(rgb) * height_ * width_);
+
+        cudaMemcpy(h_image, d_image, sizeof(rgb) * height_ * width_, cudaMemcpyDeviceToHost);
+        return h_image;
+    }
+
     Displayer::Displayer(size_t width, size_t height, size_t fps, rendererData data) : height_(height), width_(width), fps_(fps), screen_(data), img_(height, width, CV_8UC3, cv::Scalar(0, 0, 0))
     {
         cv::namedWindow("Raycaster");
@@ -91,7 +103,7 @@ namespace rcr {
     }
 
     void Displayer::moveCamera(vec3<float> offset) {
-        screen_.camPos.sumSingle(&offset, &screen_.camPos);
+        screen_.camPos.sum(&offset, &screen_.camPos);
     }
 
     void Displayer::setCameraPos(vec3<float> pos) {
@@ -101,26 +113,35 @@ namespace rcr {
     void Displayer::render()
     {
         hitPos *d_hits = getDeviceHits();
-        hitPos *h_hits;
         Triangle *d_triangles = createTriangleArray();
         CudaError *d_error = CudaError::createDeviceCudaError();
-        std::pair<int, int> dimensions = getNumThreadsBlocks();
+        std::pair<int, int> dimensions = getNumThreadsBlocks(shapes_.size());
+        rgb *d_image;
+        rgb *h_image;
 
-        kernelRender<<<dimensions.first, dimensions.second>>>(d_hits, height_, width_, shapes_.size(), d_triangles, screen_, d_error);
+        kernelHitdetect<<<dimensions.first, dimensions.second>>>(d_hits, height_, width_, shapes_.size(), d_triangles, screen_, d_error);
 
-        checkCudaError(cudaGetLastError(), "kernel launch");
-        checkCudaError(cudaDeviceSynchronize(), "cudaDeviceSynchronize");
-
-        h_hits = moveHitsToHost(d_hits);
-
-        // createImage(matrix3{height_, width_, shapes_.size(), h_hits});
-        displayImage();
-
+        checkCudaError(cudaGetLastError(), "Hit Detect kernel launch");
+        checkCudaError(cudaDeviceSynchronize(), "cudaDeviceSynchronize for Hit Detect kernel");
         rcr::CudaError::checkDeviceCudaError(d_error);
 
-        free(h_hits);
+        d_image = getDeviceImage();
+        dimensions = getNumThreadsBlocks(1);
 
+        kernelRender<<<dimensions.first, dimensions.second>>>(d_image, d_hits, height_, width_, shapes_.size(), d_triangles, screen_, d_error);
+
+        checkCudaError(cudaGetLastError(), "Render kernel launch");
+        checkCudaError(cudaDeviceSynchronize(), "cudaDeviceSynchronize for Render kernel");
+        rcr::CudaError::checkDeviceCudaError(d_error);
+
+        h_image = moveImageToHost(d_image);
+
+        createImage(matrix2{height_, width_, h_image});
+        displayImage();
+
+        free(h_image);
         cudaFree(d_hits);
+        cudaFree(d_image);
         cudaFree(d_triangles);
         cudaFree(d_error);
     }

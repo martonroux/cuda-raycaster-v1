@@ -14,8 +14,8 @@ namespace rcr {
         temp_res={};
         res={};
 
-        ray.direction.multSingle(t, &temp_res);
-        ray.origin.sumSingle(&temp_res, &res);
+        ray.direction.mult(t, &temp_res);
+        ray.origin.sum(&temp_res, &res);
         return res;
     }
 
@@ -26,33 +26,33 @@ namespace rcr {
         e1={}, e2={}, h={}, s={}, q={};
         f=0, f=0, u=0, v=0, t=0;
 
-        p2_.diffSingle(&p1_, &e1);
-        p3_.diffSingle(&p1_, &e2);
+        p2_.diff(&p1_, &e1);
+        p3_.diff(&p1_, &e2);
 
-        ray.direction.crossSingle(&e2, &h);
+        ray.direction.cross(&e2, &h);
 
-        a = e1.dotSingle(&h);  // This function is blocking
+        a = e1.dot(&h);  // This function is blocking
 
         if (a > -0.00001 && a < 0.00001)
             return {false, {}};
 
         f = 1 / a;
 
-        ray.origin.diffSingle(&p1_, &s);
+        ray.origin.diff(&p1_, &s);
 
-        u = f * s.dotSingle(&h);  // This function is blocking
+        u = f * s.dot(&h);  // This function is blocking
 
         if (u < 0.0 || u > 1.0)
             return {false, {}};
 
-        s.crossSingle(&e1, &q);
+        s.cross(&e1, &q);
 
-        v = f * ray.direction.dotSingle(&q);  // This function is blocking
+        v = f * ray.direction.dot(&q);  // This function is blocking
 
         if (v < 0.0 || u + v > 1.0)
             return {false, {}};
 
-        t = f * e2.dotSingle(&q);
+        t = f * e2.dot(&q);
 
         if (t > 0.00001)
             return {true, {getHitPos(ray, t)}};

@@ -34,15 +34,15 @@ namespace rcr {
         Keyboard keyboard_{};
         Mouse mouse_{};
 
-        void createImage(rcr::matrix3<rcr::hitPos> image);
+        void createImage(matrix2<rgb> image);
         void displayImage();
 
-        [[nodiscard]] std::pair<int, int> getNumThreadsBlocks() const;
-        // [[nodiscard]] matrix3<rcr::hitPos> *createHitMatrix() const;
-        // void retrieveDeviceMatrix(matrix3<rcr::hitPos> *d_matrix, size_t row, size_t col, size_t dep);
+        [[nodiscard]] std::pair<int, int> getNumThreadsBlocks(size_t numTriangles) const;
         [[nodiscard]] Triangle *createTriangleArray() const;
         [[nodiscard]] hitPos *getDeviceHits() const;
         [[nodiscard]] hitPos *moveHitsToHost(hitPos *d_hits) const;
+        [[nodiscard]] rgb *getDeviceImage() const;
+        [[nodiscard]] rgb *moveImageToHost(rgb *d_image) const;
 
     public:
         __host__ Displayer(size_t width, size_t height, size_t fps, rendererData data);

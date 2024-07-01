@@ -20,8 +20,8 @@ int main() {
     const int updateInterval = 30; // Update FPS display every 30 frames
 
     while (true) {
-        displayer.addShape(rcr::Triangle{{0, 2, 5}, {-2, -4, 5}, {2, -4, 5}});
-        // displayer.addShape(rcr::Triangle{{-2, -4, 5}, {0, -5.5, 5}, {0, -4, 5}});
+        displayer.addShape(rcr::Triangle{{0, 2, 5}, {-2, -4, 5}, {2, -4, 5}, {255, 255, 255}});
+        displayer.addShape(rcr::Triangle{{0, 6, 3}, {-2, -4, 7}, {2, -4, 7}, {255, 0, 0}});
         // displayer.addShape(rcr::Triangle{{2, -4, 5}, {0, -5.5, 5}, {0, -4, 5}});
 
         displayer.render();

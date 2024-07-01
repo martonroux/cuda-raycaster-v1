@@ -8,6 +8,7 @@
 #define MATRIX_CUH
 
 #include "Error.hpp"
+#include "CudaError.hpp"
 
 namespace rcr {
 

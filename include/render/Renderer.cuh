@@ -7,6 +7,7 @@
 #ifndef RENDERER_CUH
 #define RENDERER_CUH
 
+#include "math/Matrix2.cuh"
 #include "math/Matrix3.cuh"
 #include "math/Ray.cuh"
 #include "shapes/Triangle.hpp"
@@ -23,17 +24,17 @@ namespace rcr {
 
         vec3<float> widthPart={}, heightPart={}, combination={}, result={}, finalDirection={};
 
-        data.screen.width.multSingle(u, &widthPart);
-        data.screen.height.multSingle(v, &heightPart);
+        data.screen.width.mult(u, &widthPart);
+        data.screen.height.mult(v, &heightPart);
 
-        widthPart.sumSingle(&heightPart, &combination);
-        combination.sumSingle(&data.screen.topLeft, &result);
-        result.diffSingle(&data.camPos, &finalDirection);
+        widthPart.sum(&heightPart, &combination);
+        combination.sum(&data.screen.topLeft, &result);
+        result.diff(&data.camPos, &finalDirection);
 
         return {data.camPos, finalDirection};
     }
 
-    inline __device__ void render(matrix3<hitPos> *image, size_t height, size_t width, size_t numTriangles, Triangle *triangles,
+    inline __device__ void hitDetect(matrix3<hitPos> *hits, size_t height, size_t width, size_t numTriangles, Triangle *triangles,
         rendererData data, CudaError *error)
     {
         int idx = blockIdx.x * blockDim.x + threadIdx.x;
@@ -59,19 +60,68 @@ namespace rcr {
         ray ray = getPixelRay(u, v, data, error);
         hitPos pos = triangles[triangleId].hit(ray);
 
-        (*image)(pixels[1], pixels[0], triangleId, error).hit = pos.hit;
-        (*image)(pixels[1], pixels[0], triangleId, error).pos = pos.pos;
+        (*hits)(pixels[1], pixels[0], triangleId, error).hit = pos.hit;
+        (*hits)(pixels[1], pixels[0], triangleId, error).pos = pos.pos;
     }
 
-    inline __global__ void kernelRender(rcr::hitPos *image, size_t height, size_t width, size_t numTriangles,
-        rcr::Triangle *triangles, rcr::rendererData screen, rcr::CudaError *error)
+    inline __device__ void render(matrix2<rgb> *image, matrix3<hitPos> *hits, size_t height, size_t width, size_t numTriangles,
+        Triangle *triangles, rendererData screen, CudaError *error)
     {
-        matrix3<rcr::hitPos> hits{height, width, numTriangles, image};
+        int idx = blockIdx.x * blockDim.x + threadIdx.x;
+        int pixels[2] = {};
+
+        pixels[0] = idx % width;
+        pixels[1] = idx / width;
+
+        if (pixels[1] > height)
+            return;
+
+        int smallestIdx = -1;
+        float smallestDistance = 0;
+        float distance;
+
+        for (int i = 0; i < numTriangles; i++) {
+            if ((*hits)(pixels[1], pixels[0], i, error).hit == true) {
+                if (smallestIdx == -1) {
+                    smallestIdx = i;
+                    smallestDistance = (*hits)(pixels[1], pixels[0], i, error).pos.getDistance(&screen.camPos);
+                } else {
+                    distance = (*hits)(pixels[1], pixels[0], i, error).pos.getDistance(&screen.camPos);
+
+                    if (distance < smallestDistance) {
+                        smallestIdx = i;
+                        smallestDistance = distance;
+                    }
+                }
+            }
+        }
+
+        if (smallestIdx != -1) {
+            (*image)(pixels[1], pixels[0], error) = triangles[smallestIdx].getColor();
+        }
+    }
+
+    inline __global__ void kernelHitdetect(hitPos *hits, size_t height, size_t width, size_t numTriangles,
+        Triangle *triangles, rendererData screen, CudaError *error)
+    {
+        matrix3 hitsMat{height, width, numTriangles, hits};
         int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
         if (idx >= numTriangles * height * width)
             return;
-        render(&hits, height, width, numTriangles, triangles, screen, error);
+        hitDetect(&hitsMat, height, width, numTriangles, triangles, screen, error);
+    }
+
+    inline  __global__ void kernelRender(rgb *image, hitPos *hits, size_t height, size_t width, size_t numTriangles,
+        Triangle *triangles, rendererData screen, CudaError *error)
+    {
+        matrix3 hitsMat{height, width, numTriangles, hits};
+        matrix2 imageMat{height, width, image};
+        int idx = blockIdx.x * blockDim.x + threadIdx.x;
+
+        if (idx >= height * width)
+            return;
+        render(&imageMat, &hitsMat, height, width, numTriangles, triangles, screen, error);
     }
 
 }
