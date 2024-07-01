@@ -90,10 +90,13 @@ namespace rcr {
     {
         cv::namedWindow("Raycaster");
         cv::setMouseCallback("Raycaster", rcr::onMouseCallback, &mouse_);
+        d_img_ = getDeviceImage();
     }
 
     Displayer::~Displayer()
     {
+        cudaFree(d_img_);
+        if (d_hits_ != nullptr) cudaFree(d_hits_);
         cv::destroyWindow("Raycaster");
     }
 
@@ -112,47 +115,42 @@ namespace rcr {
 
     void Displayer::render()
     {
-        hitPos *d_hits = getDeviceHits();
+        if (prev_num_triangles_ != shapes_.size()) {
+            if (d_hits_ != nullptr) cudaFree(d_hits_);
+            d_hits_ = getDeviceHits();
+        }
         Triangle *d_triangles = createTriangleArray();
         CudaError *d_error = CudaError::createDeviceCudaError();
         std::pair<int, int> dimensions = getNumThreadsBlocks(shapes_.size());
-        rgb *d_image;
         rgb *h_image;
 
-        kernelHitdetect<<<dimensions.first, dimensions.second>>>(d_hits, height_, width_, shapes_.size(), d_triangles, screen_, d_error);
+        kernelHitdetect<<<dimensions.first, dimensions.second>>>(d_hits_, height_, width_, shapes_.size(), d_triangles, screen_, d_error);
 
         checkCudaError(cudaGetLastError(), "Hit Detect kernel launch");
         checkCudaError(cudaDeviceSynchronize(), "cudaDeviceSynchronize for Hit Detect kernel");
         rcr::CudaError::checkDeviceCudaError(d_error);
 
-        d_image = getDeviceImage();
         dimensions = getNumThreadsBlocks(1);
 
-        kernelRender<<<dimensions.first, dimensions.second>>>(d_image, d_hits, height_, width_, shapes_.size(), d_triangles, screen_, d_error);
+        kernelRender<<<dimensions.first, dimensions.second>>>(d_img_, d_hits_, height_, width_, shapes_.size(), d_triangles, screen_, d_error);
 
         checkCudaError(cudaGetLastError(), "Render kernel launch");
         checkCudaError(cudaDeviceSynchronize(), "cudaDeviceSynchronize for Render kernel");
         rcr::CudaError::checkDeviceCudaError(d_error);
 
-        h_image = moveImageToHost(d_image);
+        h_image = moveImageToHost(d_img_);
 
         createImage(matrix2{height_, width_, h_image});
         displayImage();
 
         free(h_image);
-        cudaFree(d_hits);
-        cudaFree(d_image);
         cudaFree(d_triangles);
         cudaFree(d_error);
+
+        prev_num_triangles_ = shapes_.size();
     }
 
     void Displayer::clear() {
-        img_ = cv::Mat(static_cast<int>(height_), static_cast<int>(width_), CV_8UC3, cv::Scalar(0, 0, 0));
-        shapes_.clear();
-    }
-
-    void Displayer::clear(rgb backgroundColor) {
-        img_ = cv::Mat(static_cast<int>(height_), static_cast<int>(width_), CV_8UC3, cv::Scalar(backgroundColor.b, backgroundColor.g, backgroundColor.r));
         shapes_.clear();
     }
 

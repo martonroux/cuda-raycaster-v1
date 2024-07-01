@@ -29,6 +29,9 @@ namespace rcr {
         rendererData screen_;
 
         cv::Mat img_;
+        rgb *d_img_ = nullptr;
+        hitPos *d_hits_ = nullptr;
+        size_t prev_num_triangles_ = 0;
         std::vector<Triangle> shapes_{};
 
         Keyboard keyboard_{};
@@ -54,7 +57,6 @@ namespace rcr {
 
         __host__ void render();
         __host__ void clear();
-        __host__ void clear(rgb backgroundColor);
 
         __host__ [[nodiscard]] Keyboard getKeyboardFrame() const;
         __host__ [[nodiscard]] Mouse getMouseFrame() const;
